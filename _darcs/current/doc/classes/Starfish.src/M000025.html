@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>server (Starfish)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre><span class="ruby-comment cmt"># File lib/starfish.rb, line 48</span>
+  <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">server</span>
+    <span class="ruby-keyword kw">unless</span> <span class="ruby-ivar">@@server</span>
+      <span class="ruby-identifier">$stderr</span>.<span class="ruby-identifier">puts</span> <span class="ruby-value str">&quot;You must specify a server&quot;</span>
+      <span class="ruby-identifier">exit</span>
+    <span class="ruby-keyword kw">end</span>
+
+    <span class="ruby-identifier">map_reduce</span> = <span class="ruby-constant">MapReduce</span>.<span class="ruby-identifier">new</span>
+    <span class="ruby-identifier">object</span> = <span class="ruby-ivar">@@server</span>.<span class="ruby-identifier">call</span>(<span class="ruby-identifier">map_reduce</span>)
+    
+    <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">map_reduce</span>.<span class="ruby-identifier">valid?</span>
+      <span class="ruby-identifier">object</span> = <span class="ruby-identifier">map_reduce</span>
+    <span class="ruby-keyword kw">end</span>
+    
+    <span class="ruby-identifier">sanitize</span> <span class="ruby-identifier">object</span>
+    
+    <span class="ruby-identifier">ts</span> = <span class="ruby-constant">Rinda</span><span class="ruby-operator">::</span><span class="ruby-constant">TupleSpace</span>.<span class="ruby-identifier">new</span>
+    <span class="ruby-keyword kw">begin</span>
+      <span class="ruby-identifier">ts</span>.<span class="ruby-identifier">write</span>([<span class="ruby-identifier">:name</span>, <span class="ruby-identifier">uniq</span>.<span class="ruby-identifier">intern</span>, <span class="ruby-identifier">object</span>, <span class="ruby-ivar">@uniq</span>])
+      <span class="ruby-identifier">ring_server</span> = <span class="ruby-constant">Rinda</span><span class="ruby-operator">::</span><span class="ruby-constant">RingServer</span>.<span class="ruby-identifier">new</span>(<span class="ruby-identifier">ts</span>)
+    <span class="ruby-keyword kw">rescue</span> <span class="ruby-constant">Errno</span><span class="ruby-operator">::</span><span class="ruby-constant">EADDRINUSE</span>
+      <span class="ruby-identifier">ts</span> = <span class="ruby-constant">RingFinger</span>.<span class="ruby-identifier">primary</span>
+      <span class="ruby-identifier">ts</span>.<span class="ruby-identifier">write</span>([<span class="ruby-identifier">:name</span>, <span class="ruby-identifier">uniq</span>.<span class="ruby-identifier">intern</span>, <span class="ruby-identifier">object</span>, <span class="ruby-ivar">@uniq</span>])
+    <span class="ruby-keyword kw">end</span>
+
+    <span class="ruby-constant">File</span>.<span class="ruby-identifier">open</span>(<span class="ruby-ivar">@@options</span>[<span class="ruby-identifier">:pid</span>] <span class="ruby-operator">||</span> <span class="ruby-node">&quot;#{Dir.tmpdir}/starfish-#{uniq}.pid&quot;</span>,<span class="ruby-value str">&quot;w&quot;</span>){<span class="ruby-operator">|</span><span class="ruby-identifier">f</span><span class="ruby-operator">|</span><span class="ruby-identifier">f</span><span class="ruby-operator">&lt;&lt;</span><span class="ruby-constant">Process</span>.<span class="ruby-identifier">pid</span>}
+
+    <span class="ruby-identifier">$stderr</span>.<span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;server started for #{object.inspect}&quot;</span>
+    
+    <span class="ruby-constant">DRb</span>.<span class="ruby-identifier">thread</span>.<span class="ruby-identifier">join</span>
+  <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>

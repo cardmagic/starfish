@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>raise_if_invalid! (MapReduce)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre><span class="ruby-comment cmt"># File lib/map_reduce.rb, line 98</span>
+  <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">raise_if_invalid!</span>
+    <span class="ruby-keyword kw">if</span> <span class="ruby-keyword kw">not</span> <span class="ruby-identifier">valid_type?</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">MapReduceError</span>, <span class="ruby-value str">&quot;invalid type, please make sure you provide one of the following classes or sub-classes thereof: ActiveRecord::Base, File, or Array&quot;</span>
+    <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">if</span> <span class="ruby-keyword kw">not</span> <span class="ruby-identifier">valid_input?</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">MapReduceError</span>, <span class="ruby-node">&quot;invalid input, please make sure you provide one of the following: #{Array(@@types[type]).join(&quot;, &quot;)}&quot;</span>
+    <span class="ruby-keyword kw">end</span>
+  <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>

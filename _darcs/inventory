@@ -1,0 +1,35 @@
+[Initial revision
+lucas@rufy.com**20060731072230] 
+[Major reworking including log files for processes, specifiable inside the call to server, see foo.rb
+lucas@rufy.com**20060731082423] [Adding initial work for map_reduce
+lucas@rufy.com**20060804174844] 
+[MapReduce: Adding ActiveRecord implementation
+lucas@rufy.com**20060816051721] 
+[MapReduce: Added missing files from last checkin
+lucas@rufy.com**20060816052420] 
+[MapReduce: MAJOR changes including the fact that it actually works now!
+lucas@rufy.com**20060816095616] 
+[Starfish: Fixing it so that basic use cases still work
+lucas@rufy.com**20060816100147] 
+[Code cleanup
+lucas@rufy.com**20060816183030] 
+[Starfish: Preparing for production
+lucas@rufy.com**20060816224240] 
+[Removing unnecessary file
+lucas@rufy.com**20060816224532] 
+[Forgot to include examples
+lucas@rufy.com**20060816225325] 
+[Documentation: adding background
+lucas@rufy.com**20060816230709] 
+[A few cleanups
+lucas@rufy.com**20060817004620] 
+[MapReduce: Adding File input ability
+lucas@rufy.com**20060819044505] 
+[MapReduce documentation
+lucas@rufy.com**20060819060037] 
+[MapReduce: Allowing you to define a finished method
+lucas@rufy.com**20060822175050] 
+[Prepare for 1.1.1 release
+lucas@rufy.com**20060822175137] 
+[Starfish: Updating to support windows
+lucas@rufy.com**20060822234609] 

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>client (Starfish)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre><span class="ruby-comment cmt"># File lib/starfish.rb, line 79</span>
+  <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">client</span>
+    <span class="ruby-keyword kw">unless</span> <span class="ruby-ivar">@@client</span>
+      <span class="ruby-identifier">$stderr</span>.<span class="ruby-identifier">puts</span> <span class="ruby-value str">&quot;You must specify a client&quot;</span>
+      <span class="ruby-identifier">exit</span>
+    <span class="ruby-keyword kw">end</span>
+
+    <span class="ruby-identifier">negotiate</span>
+    <span class="ruby-constant">Timeout</span><span class="ruby-operator">::</span><span class="ruby-identifier">timeout</span>(<span class="ruby-value">5</span>) { <span class="ruby-ivar">@server_object</span> = <span class="ruby-ivar">@ring_server</span>.<span class="ruby-identifier">read</span>([<span class="ruby-identifier">:name</span>, <span class="ruby-identifier">uniq</span>.<span class="ruby-identifier">intern</span>, <span class="ruby-keyword kw">nil</span>, <span class="ruby-keyword kw">nil</span>])[<span class="ruby-value">2</span>] }
+    
+    <span class="ruby-identifier">i</span> = <span class="ruby-value">0</span>
+    <span class="ruby-identifier">loop</span> <span class="ruby-keyword kw">do</span>
+      <span class="ruby-identifier">i</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+      <span class="ruby-constant">GC</span>.<span class="ruby-identifier">start</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">i</span><span class="ruby-operator">%</span><span class="ruby-value">1000</span> <span class="ruby-operator">==</span> <span class="ruby-value">0</span>
+      
+      <span class="ruby-keyword kw">begin</span>
+        <span class="ruby-ivar">@server_object</span>.<span class="ruby-identifier">map_reduce?</span>
+      <span class="ruby-keyword kw">rescue</span> <span class="ruby-constant">NoMethodError</span>
+        <span class="ruby-ivar">@called</span> = <span class="ruby-ivar">@@client</span>.<span class="ruby-identifier">call</span>(<span class="ruby-ivar">@server_object</span>)
+      <span class="ruby-keyword kw">end</span>
+    
+      <span class="ruby-keyword kw">unless</span> <span class="ruby-ivar">@called</span>
+        <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@server_object</span>.<span class="ruby-identifier">map_reduce?</span> <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-ivar">@server_object</span>.<span class="ruby-identifier">valid?</span>
+          <span class="ruby-identifier">map_reduce_client</span> = <span class="ruby-identifier">eval</span>(<span class="ruby-node">&quot;MapReduce::#{@server_object.base_type_to_s}::Client&quot;</span>).<span class="ruby-identifier">new</span>(<span class="ruby-ivar">@server_object</span>)
+
+          <span class="ruby-identifier">$server_object</span> = <span class="ruby-ivar">@server_object</span>
+          <span class="ruby-constant">Object</span>.<span class="ruby-identifier">instance_eval</span> <span class="ruby-keyword kw">do</span>
+            <span class="ruby-identifier">define_method</span>(<span class="ruby-identifier">:logger</span>) <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-operator">*</span><span class="ruby-identifier">args</span><span class="ruby-operator">|</span>
+              <span class="ruby-identifier">$server_object</span>.<span class="ruby-identifier">_logger</span>(<span class="ruby-operator">*</span><span class="ruby-identifier">args</span>)
+            <span class="ruby-keyword kw">end</span>
+            <span class="ruby-identifier">define_method</span>(<span class="ruby-identifier">:server</span>) <span class="ruby-keyword kw">do</span>
+              <span class="ruby-identifier">$server_object</span>
+            <span class="ruby-keyword kw">end</span>
+          <span class="ruby-keyword kw">end</span>
+        
+          <span class="ruby-identifier">map_reduce_client</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">object</span><span class="ruby-operator">|</span>
+            <span class="ruby-identifier">t</span> = <span class="ruby-constant">Time</span>.<span class="ruby-identifier">now</span>
+            <span class="ruby-ivar">@@client</span>.<span class="ruby-identifier">call</span>(<span class="ruby-identifier">object</span>)
+            <span class="ruby-ivar">@server_object</span>.<span class="ruby-identifier">add_time_spent_processing_objects</span>(<span class="ruby-constant">Time</span>.<span class="ruby-identifier">now</span><span class="ruby-operator">-</span><span class="ruby-identifier">t</span>)
+          <span class="ruby-keyword kw">end</span>
+        <span class="ruby-keyword kw">else</span>
+          <span class="ruby-identifier">raise</span> <span class="ruby-constant">MapReduceError</span>, <span class="ruby-value str">&quot;invalid map reduce server (possibly missing type or input)&quot;</span>
+        <span class="ruby-keyword kw">end</span>
+      <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">end</span>
+    
+  <span class="ruby-keyword kw">rescue</span> <span class="ruby-constant">Timeout</span><span class="ruby-operator">::</span><span class="ruby-constant">Error</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-identifier">m</span>
+    <span class="ruby-identifier">spawn</span>
+    <span class="ruby-ivar">@retry_count</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@retry_count</span> <span class="ruby-operator">&lt;=</span> <span class="ruby-value">5</span>
+      <span class="ruby-keyword kw">retry</span>
+    <span class="ruby-keyword kw">else</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">Timeout</span><span class="ruby-operator">::</span><span class="ruby-constant">Error</span>, <span class="ruby-identifier">m</span>
+    <span class="ruby-keyword kw">end</span>
+  <span class="ruby-keyword kw">rescue</span> <span class="ruby-constant">DRb</span><span class="ruby-operator">::</span><span class="ruby-constant">DRbConnError</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-identifier">m</span>
+    <span class="ruby-identifier">stop</span>
+    <span class="ruby-identifier">negotiate</span>
+    <span class="ruby-ivar">@retry_count</span> <span class="ruby-operator">+=</span> <span class="ruby-value">1</span>
+    <span class="ruby-keyword kw">if</span> <span class="ruby-ivar">@retry_count</span> <span class="ruby-operator">&lt;=</span> <span class="ruby-value">5</span>
+      <span class="ruby-keyword kw">retry</span>
+    <span class="ruby-keyword kw">else</span>
+      <span class="ruby-identifier">raise</span> <span class="ruby-constant">DRb</span><span class="ruby-operator">::</span><span class="ruby-constant">DRbConnError</span>, <span class="ruby-identifier">m</span>
+    <span class="ruby-keyword kw">end</span>
+  <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>
