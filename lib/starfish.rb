@@ -23,8 +23,8 @@ end
 
 class StarfishError < StandardError; end
 class Starfish
-  VERSION = "1.1.2"
-  NULL = RUBY_PLATFORM =~ /mswin/ ? 'NUL' : '/dev/null'
+  VERSION = "1.1.3"
+  NULL = (RUBY_PLATFORM =~ /mswin/) ? 'NUL' : '/dev/null'
   
   @@server = false
   @@client = false
@@ -95,34 +95,39 @@ class Starfish
       rescue NoMethodError
         @called = @@client.call(@server_object)
       end
-    
-      unless @called
-        if @server_object.map_reduce? && @server_object.valid?
-          map_reduce_client = eval("MapReduce::#{@server_object.base_type_to_s}::Client").new(@server_object)
+      
+      begin
+        unless @called
+          if @server_object.map_reduce? && @server_object.valid?
+            map_reduce_client = eval("MapReduce::#{@server_object.base_type_to_s}::Client").new(@server_object)
 
-          $server_object = @server_object
-          Object.instance_eval do
-            define_method(:logger) do |*args|
-              $server_object._logger(*args)
+            $server_object = @server_object
+            Object.instance_eval do
+              define_method(:logger) do |*args|
+                $server_object._logger(*args)
+              end
+              define_method(:server) do
+                $server_object
+              end
             end
-            define_method(:server) do
-              $server_object
-            end
-          end
         
-          map_reduce_client.each do |object|
-            t = Time.now
-            @@client.call(object)
-            @server_object.add_time_spent_processing_objects(Time.now-t)
+            map_reduce_client.each do |object|
+              t = Time.now
+              Timeout::timeout(@@options[:timeout] || 60) do
+                @@client.call(object)
+              end
+              @server_object.add_time_spent_processing_objects(Time.now-t)
+            end
+          else
+            raise MapReduceError, "invalid map reduce server (possibly missing type or input)"
           end
-        else
-          raise MapReduceError, "invalid map reduce server (possibly missing type or input)"
         end
+      rescue NoMethodError
       end
     end
     
   rescue Timeout::Error => m
-    spawn
+    spawn unless @called
     @retry_count += 1
     if @retry_count <= 5
       retry
