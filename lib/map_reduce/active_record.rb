@@ -4,6 +4,7 @@ require_gem 'activerecord'
 class MapReduce
   module ActiveRecord
     module Base
+      attr_accessor :order, :group, :joins, :include, :select, :readonly
       attr_accessor :queue_size, :locked_queue_wait, :empty_queue_wait, :rescan_when_complete, :vigilant
       
       class Client
@@ -37,7 +38,10 @@ class MapReduce
             sleep @server_object.empty_queue_wait || 30
             get_value_from(@server_object.get_id)
           else
-            @type.find(object_id)
+            @type.find(object_id,
+               :include => @server_object.include,
+              :readonly => @server_object.readonly
+            )
           end
         end
       end
@@ -92,7 +96,17 @@ private
           @lock = true
           t = Time.now
 
-          @queue = type.find(:all, :conditions => input, :limit => @queue_size, :offset => @offset).map{|object|object.id}
+          @queue = type.find(:all,
+            :conditions => input,
+                 :limit => @queue_size,
+                :offset => @offset,
+                 :order => @order,
+                 :group => @group,
+                 :joins => @joins,
+               :include => @include,
+                :select => @select,
+              :readonly => @readonly
+          ).map{|object|object.id}
 
           @time_spent_grabbing_queues += (Time.now - t)
           @num_queues_grabbed += 1

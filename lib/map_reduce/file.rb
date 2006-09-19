@@ -1,6 +1,7 @@
 class MapReduce
   module File
-    attr_accessor :queue_size, :locked_queue_wait, :empty_queue_wait, :rescan_when_complete, :vigilant, :lines_per_client
+    attr_accessor :offset, :queue_size, :locked_queue_wait, :empty_queue_wait, :rescan_when_complete, :vigilant, :lines_per_client
+    attr_reader :total
 
     class Client
       include DRbUndumped
@@ -62,15 +63,17 @@ private
         case @offset
         when 0
           set_total
-        when @total
-          if @rescan_when_complete || @vigilant
-            set_total
-          else
-            begin
-              self.finished
-            rescue NameError
-            ensure
-              exit
+        else
+          if @offset >= @total
+            if @rescan_when_complete || @vigilant
+              set_total
+            else
+              begin
+                self.finished
+              rescue NameError
+              ensure
+                exit
+              end
             end
           end
         end
@@ -84,14 +87,14 @@ private
         file = ::File.open(input)
         file.seek(@offset)
         @queue_size.times do
-          @queue << file.gets
+          @queue << file.gets unless file.pos >= @total
         end
         @queue.compact!
         
         @time_spent_grabbing_queues += (Time.now - t)
         @num_queues_grabbed += 1
 
-        @offset += file.pos unless @queue.empty?
+        @offset = file.pos unless @queue.empty?
         @offset = 0 if @offset == @total && @rescan_when_complete
         @lock = false
       end
