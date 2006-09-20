@@ -110,13 +110,21 @@ class Starfish
                 $server_object
               end
             end
-        
+            
             map_reduce_client.each do |object|
-              t = Time.now
-              Timeout::timeout(@@options[:timeout] || 60) do
-                @@client.call(object)
+              begin
+                t = Time.now
+                if @@options[:timeout] != false
+                  Timeout::timeout(@@options[:timeout] || 600) do
+                    @@client.call(object)
+                  end
+                else
+                  @@client.call(object)
+                end
+                @server_object.add_time_spent_processing_objects(Time.now-t)
+              rescue Timeout::Error
+                next
               end
-              @server_object.add_time_spent_processing_objects(Time.now-t)
             end
           else
             raise MapReduceError, "invalid map reduce server (possibly missing type or input)"
