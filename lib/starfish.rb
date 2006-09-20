@@ -127,7 +127,7 @@ class Starfish
     end
     
   rescue Timeout::Error => m
-    spawn unless @called
+    spawn
     @retry_count += 1
     if @retry_count <= 5
       retry
