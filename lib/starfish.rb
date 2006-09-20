@@ -23,7 +23,7 @@ end
 
 class StarfishError < StandardError; end
 class Starfish
-  VERSION = "1.1.3"
+  VERSION = "1.2.0"
   NULL = (RUBY_PLATFORM =~ /mswin/) ? 'NUL' : '/dev/null'
   
   @@server = false

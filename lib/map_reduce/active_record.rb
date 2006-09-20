@@ -67,17 +67,18 @@ private
       
       def set_total
         @total = type.count(input)
-        unless @rescan_when_complete
+        if @rescan_when_complete
+          @offset = 0
+        else
           @queue_size ||= @total
         end
       end
       
       def queue
         if @queue.empty?
-          case @offset
-          when 0
+          if @offset == 0
             set_total
-          when @total
+          elsif @offset >= @total
             if @rescan_when_complete || @vigilant
               set_total
             else
@@ -112,7 +113,6 @@ private
           @num_queues_grabbed += 1
 
           @offset += @queue.size unless @queue.empty?
-          @offset = 0 if @offset == @total && @rescan_when_complete
           @lock = false
         end
 
