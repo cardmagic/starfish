@@ -1,5 +1,10 @@
-require 'rubygems'
-require_gem 'activerecord'
+begin
+  require 'active_record'
+rescue LoadError
+  require 'rubygems'
+  gem 'activerecord'
+  require 'active_record'
+end
 
 class MapReduce
   module ActiveRecord
@@ -66,7 +71,7 @@ class MapReduce
 private
       
       def set_total
-        @total = type.count(input)
+        @total = type.count(:all, :conditions => input)
         if @rescan_when_complete
           @offset = 0
         else
