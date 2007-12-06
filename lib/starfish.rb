@@ -1,3 +1,5 @@
+$:.unshift(File.dirname(__FILE__))
+
 require 'rinda/ring'
 require 'rinda/tuplespace'
 require 'timeout'
